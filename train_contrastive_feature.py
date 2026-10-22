@@ -243,11 +243,14 @@ def training(dataset, opt, pipe, iteration, saving_iterations, checkpoint_iterat
             int_sampled_scales = ((1 - sampled_scales.squeeze()) * scale_aware_dim).long()
             gates = fixed_scale_gate[int_sampled_scales].detach()
 
-        # N_sampled_scales C H W
-        feature_with_scale = rendered_features.unsqueeze(0).repeat([sampled_scales.shape[0],1,1,1])
-        feature_with_scale = feature_with_scale * gates.unsqueeze(-1).unsqueeze(-1)
+        # Sample rays first to reduce GPU memory usage
+        sampled_rendered_features = rendered_features[:, sampled_ray]
 
-        sampled_feature_with_scale = feature_with_scale[:,:,sampled_ray]
+        # Apply scale gates only to sampled rays
+        sampled_feature_with_scale = (
+            sampled_rendered_features.unsqueeze(0)
+            * gates.unsqueeze(-1)
+        )
 
         scale_conditioned_features_sam = sampled_feature_with_scale.permute([0,2,1])
 

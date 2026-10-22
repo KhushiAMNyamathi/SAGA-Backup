@@ -437,15 +437,25 @@ class GaussianSplattingGUI:
 
 
         def change_pos(sender, app_data):
-            # if not dpg.is_item_focused("_primary_window"):
-            #     return
             xy = dpg.get_mouse_pos(local=False)
-            dpg.set_value("pos_item", f"Mouse position = ({xy[0]}, {xy[1]})")
-            if self.clickmode_button and app_data == 1:     # in the click mode and right click
-                print(xy)
-                self.new_click_xy = np.array(xy)
-                self.new_click = True
+            dpg.set_value(
+                "pos_item",
+                f"Mouse position = ({xy[0]}, {xy[1]})"
+            )
 
+            if self.clickmode_button and app_data == 1:
+                try:
+                    image_pos = dpg.get_item_rect_min("_scene_image")
+
+                    x = int(xy[0] - image_pos[0])
+                    y = int(xy[1] - image_pos[1])
+
+                    if 0 <= x < self.width and 0 <= y < self.height:
+                        print(f"Segmentation click: x={x}, y={y}")
+                        self.new_click_xy = np.array([x, y])
+                        self.new_click = True
+                except (KeyError, TypeError) as e:
+                    print(f"Could not read image position: {e}")
 
         with dpg.handler_registry():
             dpg.add_mouse_wheel_handler(callback=callback_camera_wheel_scale)
